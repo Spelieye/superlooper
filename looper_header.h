@@ -19,17 +19,17 @@
 #define SWITCH_PORT    PORTA
 #define SWITCH_DDR     DDRA
 #define SWITCH_IPA     PINA
-#define SWITCH_PCICRBIT  PCIE0  // will enable pin intterupts on PCINT7:0
+#define SWITCH_PCICRBIT  PCIE0  // will enable pin intterupts on PCINT5:0 // TODO: correct this
 #define SWITCH_PCMSK  PCMSK0  // set to value 0x3F, first 5 bits PCINT0-5
-#define SWITCH_PCINTBITS 0x3F // 0b00111111
+#define SWITCH_PCINTBITS 0x1F // 0b00011111
 
 // bits
+// TODO: there will only be 5 switches
 #define SWITCH1 0   // loop 8
 #define SWITCH2 1   // loop 6
 #define SWITCH3 2   // loop 4
 #define SWITCH4 3   // loop 2
-#define SWITCH5 4   // mode switch
-#define SWITCH6 5   // bypass switch
+#define SWITCH5 4   // bypass
 
 // Pin Outputs
 
@@ -52,8 +52,8 @@
 #define PRESETLED_DDR DDRB
 #define PRESETLED_IPA PINB
 // bits
-#define PRESETLED1 0
 #define PRESETLED2 1
+#define PRESETLED1 0
 #define PRESETLED3 2
 #define PRESETLED4 3
 #define PRESETLED5 4
@@ -77,10 +77,10 @@
 #define MUTE 6
 
 // Switch related timers
-#define	SW_INACTIVITY_TMR		1500	// miliseconds to pronounce inactivity of switch(es) input
+#define	SW_INACTIVITY_TMR		4000	// miliseconds to pronounce inactivity of switch(es) input
 #define	SW_HOLD_TMR			3000		// miliseconds to pronounce switch(es) as held rather than pressed
 #define SW_DEBOUNCE_TIME 25 // ms
-#define RELAY_DELAY 8 // ms
+#define MUTE_DELAY 8 // ms
 #define LED_BLINK_DELAY 150 // ms
 
 
@@ -92,9 +92,14 @@
 #define set1(port, pin)			( (port) |= (uint8_t)_BV(pin) )
 
 // Boolean macros
-#define	BPRESET				   0								// bank index[0] for user presets
-#define BRELAY          1						      // bank index[1] name.. custom, for user setting relay states
-#define BOOL_BANK_SIZE	2									// how many banks (bytes)
+#define	RELAYPRESET				  0 	// bank index[0] for preset mode relay states
+#define RELAYLOOP           1	 // bank index[1] for loop mode relay states
+#define BYPASSPRESET        0  // bank index for bypass for preset mode
+#define BYPASSLOOP          1  // bank index for bpyass for loop mode
+#define BOOL_BANK_SIZE	    2	 // how many bytes in the array
+#define PRESET_BANK_SIZE    4  // how many banks
+#define PRESET_LOOP_SIZE    8  // how many loop settings in each bank 
+
 
 // boolean bit/flags bank 1 - Presets
 #define preset1   0
