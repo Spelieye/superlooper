@@ -16,12 +16,12 @@
 // Pin Inputs --> Use PCINT0 Pin Change Interrupt Request
 
 // Switches
-#define SWITCH_PORT    PORTA
-#define SWITCH_DDR     DDRA
-#define SWITCH_IPA     PINA
-#define SWITCH_PCICRBIT  PCIE0  // will enable pin intterupts on PCINT5:0 // TODO: correct this
-#define SWITCH_PCMSK  PCMSK0  // set to value 0x3F, first 5 bits PCINT0-5
-#define SWITCH_PCINTBITS 0x1F // 0b00011111
+#define SWITCH_PORT       PORTA
+#define SWITCH_DDR        DDRA
+#define SWITCH_IPA        PINA
+#define SWITCH_PCICRBIT   PCIE0  // will enable pin intterupts on PCINT5:0 // TODO: correct this
+#define SWITCH_PCMSK      PCMSK0  // set to value 0x3F, first 5 bits PCINT0-5
+#define SWITCH_PCINTBITS  0x1F  // 0b00011111
 
 // bits
 // TODO: there will only be 5 switches
@@ -52,8 +52,8 @@
 #define PRESETLED_DDR DDRB
 #define PRESETLED_IPA PINB
 // bits
-#define PRESETLED2 1
 #define PRESETLED1 0
+#define PRESETLED2 1
 #define PRESETLED3 2
 #define PRESETLED4 3
 #define PRESETLED5 4
@@ -77,7 +77,7 @@
 #define MUTE 6
 
 // Switch related timers
-#define	SW_INACTIVITY_TMR		4000	// miliseconds to pronounce inactivity of switch(es) input
+//#define	SW_INACTIVITY_TMR		4000	// miliseconds to pronounce inactivity of switch(es) input
 #define	SW_HOLD_TMR			3000		// miliseconds to pronounce switch(es) as held rather than pressed
 #define SW_DEBOUNCE_TIME 25 // ms
 #define MUTE_DELAY 8 // ms
@@ -86,19 +86,18 @@
 
 // EEPROM addresses for settings and things
 #define	EEPROM_START			0		// start of our data in eeprom is here
+#define EEPROM_REGISTER_COUNT 32 // number of preset combinations
 
 // Code macros
 #define set0(port, pin)			( (port) &= (uint8_t)~_BV(pin) )
 #define set1(port, pin)			( (port) |= (uint8_t)_BV(pin) )
 
 // Boolean macros
-#define	RELAYPRESET				  0 	// bank index[0] for preset mode relay states
-#define RELAYLOOP           1	 // bank index[1] for loop mode relay states
-#define BYPASSPRESET        0  // bank index for bypass for preset mode
-#define BYPASSLOOP          1  // bank index for bpyass for loop mode
-#define BOOL_BANK_SIZE	    2	 // how many bytes in the array
-#define PRESET_BANK_SIZE    4  // how many banks
-#define PRESET_LOOP_SIZE    8  // how many loop settings in each bank 
+#define	LOOP				     0 	// bank index[0] for preset mode relay states
+#define PRESET           1	 // bank index[1] for loop mode relay states
+#define BOOL_BANK_SIZE	 2	 // how many bytes in the array
+#define PRESET_BANK_SIZE 4  // how many banks
+#define PRESET_LOOP_SIZE 8  // how many loop settings in each bank
 
 
 // boolean bit/flags bank 1 - Presets
@@ -121,7 +120,7 @@
 #define relay7 6
 #define relay8 7
 
-#define bv(bit,bank) 			( bools[bank] & (uint8_t)_BV(bit) ) 	// boolean values GET/READ macro: if(bv(3,BSYS))...
-#define	bs(bit,bank) 			( bools[bank] |= (uint8_t)_BV(bit) ) 	// boolean values SET macro: bs(5,BSYS)
-#define	bc(bit,bank) 			( bools[bank] &= (uint8_t)~_BV(bit) ) 	// boolean values CLEAR macro: bc(4,SW)
-#define	bt(bit,bank) 			( bools[bank] ^= (uint8_t)_BV(bit) ) 	// boolean values TOGGLE macro: bt(6,SW)
+#define bv(bit,bank) 			( (bank) & (uint8_t)_BV(bit) ) 	// boolean values GET/READ macro: if(bv(3,BSYS))...
+#define	bs(bit,bank) 			( (bank) |= (uint8_t)_BV(bit) ) 	// boolean values SET macro: bs(5,BSYS)
+#define	bc(bit,bank) 			( (bank) &= (uint8_t)~_BV(bit) ) 	// boolean values CLEAR macro: bc(4,SW)
+#define	bt(bit,bank) 			( (bank) ^= (uint8_t)_BV(bit) ) 	// boolean values TOGGLE macro: bt(6,SW)

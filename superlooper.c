@@ -18,17 +18,19 @@
 void init_pins(void);
 void init_interrupts(void);
 void delay_ms_(uint16_t); // interrupt based delay function
-void toogle_relays(uint8_t);
+void toggle_loop_relays(void);
 void load_presets(void);
+void get_preset(void);
 void startup_led_show(void);
-void engage_bypass(void);
+void engage_bypass(uint8_t);
+void blink_preset_led(void);
 
 // global variables
 uint8_t switch_mask = 0x1F; // only 5 sitches and not all of them can be pressed at the sametime for an action to take place
 volatile uint16_t milliseconds = 0; // uC millisecond counter used in delay_ms_(), and is reset throughout the application
-volatile uint8_t mode = 0; // 0b00000001 = LoopMode, 0b00000010 = PresetMode
+volatile uint8_t mode = 0b00000001; // 0b00000001 = LoopMode, 0b00000010 = PresetMode
 volatile uint8_t prev_mode = 0; // previous mode
-volatile uint8_t bank = 0b00000001; // start in BankA, 0b00000010 = BankB, 0b00000100 = BankC, 0b00001000 = BankD
+volatile uint8_t bank = 0; // start in BankA, 1 = BankB, 2 = BankC, 3 = BankD
 volatile uint8_t loop_settings = 0b00000000; // loop that wants to be set regardless of which mode you are in
 volatile uint8_t bypass = 0;
 // typedef int bool; // define boolean type
@@ -36,16 +38,22 @@ volatile uint8_t bypass = 0;
 // #define False 0
 
 // switch related globals:
-volatile uint8_t sw_press = 0b00000000; // which switch was pressed --> can read this from the port pin interupt bus
+volatile uint8_t sw_press = 0b00000000; // which switch was pressed
 volatile uint8_t prev_sw = 0b00000000;
+volatile uint8_t sw_hold = 0b00000000; // which switches were held
 volatile uint16_t sw_hold_timer = 0; // to detect switch holds
 // volatile uint16_t sw_inactivity_timer = 0;
 
 // indexed variables
 volatile uint8_t mode_relay_settings[BOOL_BANK_SIZE] = { 0, 0 }; // global boolean relay values per mode
 // volatile uint8_t bypass_mode[BOOL_BANK_SIZE] = { 0, 0 };  // start out not in bypass for each mode
-volatile uint8_t prev_relay_state[BOOL_BANK_SIZE] = { 0, 0 }; // previous relay state for each mode
-volatile uint8_t presets[PRESET_BANK_SIZE][PRESET_LOOP_SIZE]; // presets
+volatile uint8_t prev_relay_state[BOOL_BANK_SIZE] = { 0, 0 }; // previous relay state for each mode. integer values are from 0-255
+volatile uint8_t bank_presets[PRESET_BANK_SIZE][PRESET_LOOP_SIZE] = {
+                  {0, 0, 0, 0, 0, 0, 0, 0}, // A
+                  {0, 0, 0, 0, 0, 0, 0, 0}, // B
+                  {0, 0, 0, 0, 0, 0, 0, 0}, // C
+                  {0, 0, 0, 0, 0, 0, 0, 0}, // D
+                }; // bank presets
 
 
 //############
@@ -53,98 +61,54 @@ volatile uint8_t presets[PRESET_BANK_SIZE][PRESET_LOOP_SIZE]; // presets
 //############
 
 int main(void) {
-  /* code */
   // initialize things
   init_pins();
   init_interrupts();
   // read EEPROM, if nothing is valid (i.e) blank, then start in a default mode with every loop on in loop mode
   uint8_t *pEE = (uint8_t *)EEPROM_START;
-  if ( eeprom_read_byte(pEE++) == 0xAA ) { // 0xAA is the "valid flag"
-    load_presets(); //TODO: how to save a multi-index array to eeprom ? what will the memory location flag be?
-} else {
- // nothing is saved in EEPROM so startup in a default mode:
-  mode = 0b00000001; // loop mode
-  sw_press = 1; // to execute toogle_relays()
-}
+  if ( eeprom_read_byte(pEE++) == 0xAA ) load_presets(); // 0xAA is the "valid flag"
 
-// cool light chase fade on startup with preset LEDs
-// if you don't want this to happen everytime the pedal powers on then commment it out.
-startup_led_show();
+ // startup in a default mode with all relays off and in loop mode
 
+  // cool light chase fade on startup with preset LEDs
+  // if you don't want this to happen everytime the pedal powers on then commment it out.
+  startup_led_show();
 
-// main app loop
-while(1) {
-  // choose which mode pedal is in
-  switch(mode) {
-    // loop mode
-    case 0b00000001:
-    // turn on loop mode led and preset led off
-    set1(BMMLED_PORT, LOOPMODELED);
-    set0(BMMLED_PORT, PRESETMODELED);
-    // stay in loop mode
-      while (mode == 0b00000001) {
-        // set relays and handle sw_press
-        // TODo: only want a loop selection to tigger an action
-        if (sw_press & ) {
-          mode_relay_settings[RELAYLOOP] = loop_settings;
-          toggle_relays(mode_relay_settings[RELAYLOOP]);
-      }
+  // main app loop
+  while(1) {
+    // choose which mode pedal is in
+    switch(mode) {
+      // loop mode
+      case 0b00000001:
+      // turn on loop mode led and preset led off
+      set1(BMMLED_PORT, LOOPMODELED);
+      set0(BMMLED_PORT, PRESETMODELED);
+      // stay in loop mode
+        while (mode == 0b00000001) {
+          // set relays and handle sw_press
+          // TODo: only want a loop selection to tigger an action
+          if (bypass) engage_bypass(LOOP);
+          else if (sw_press) toggle_loop_relays();
+          // handle switch hold and save preset
+          if (sw_hold) save_preset();
+        }
+      break;
 
-        // handle switch hold and save preset
-        if (sw_hold) save_preset();
-
-        // save current relay state
-        // turn off all relays
-        // turn on all relays to previous relay state
-        if (bypass) engage_bypass();
-      }
-    break;
-
-    // TODO: set the bank for each mode
-
-    // preset mode
-    case 0b00000010:
-      // turn on preset mode led and loop led off
-      set0(BMMLED_PORT, LOOPMODELED);
-      set1(BMMLED_PORT, PRESETMODELED);
-      while (mode == 0b00000010) {
-        if (sw_press) toggle_relays();
-      }
-      preset_mode();
-    break;
-
-    // bypass mode
-  //   case 0b00000100:
-  //   // need to remember the last relay state and mode when coming out of bypass mode
-  //   // check to see if bypass mode has been pressed again
-  //   // toggle off any relays and LED's
-  //   // maybe blink a mode LED ??
-  //   // only want to toggle once. use a whiile loop here?
-  //   // while in bypass mode -- allow channels to be turned on
-  //   // use prev_sw variable to set the relays when you press bypass again!
-  //   while (bypass) {
-  //     // if the relay ports are already off then do nothing
-  //     if (RELAY_PORT) {
-  //       // want to turn off all relays that are on on.
-  //       prev_relay_state[BLOOP] = BLOOP; // remember the current loops that are on before turning them off
-  //       mode_relay_settings[BLOOP] = 0;
-  //       toggle_relays();
-  //     }
-  //   }
-  //   mode = prev_mode; // return to previous mode
-  //   break;
-  // }
-
-
-
-}
-
+      // preset mode
+      case 0b00000010:
+        // turn on preset mode led and loop led off
+        set0(BMMLED_PORT, LOOPMODELED);
+        set1(BMMLED_PORT, PRESETMODELED);
+        while (mode == 0b00000010) {
+          if (bypass) engage_bypass(PRESET);
+          else if (sw_press) get_preset();
+        }
+        // if any switch is held while in loop mode, nothing happens
+      break;
+    }
+  }
   return 0;
 }
-
-// use pin interupts
-
-// user timmer interupts for counting
 
 //##############################
 // Interrupt: TIMER1_COMPA_vect //
@@ -153,9 +117,7 @@ ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
   // timer interupt will occur about every ms
   milliseconds++; // no need to handle this since unassigned integers can never overflow in C
   if(sw_hold_timer) sw_hold_timer--;
-
 }
-
 
 //##############################
 // Interrupt: PCINT0_vect //
@@ -180,47 +142,57 @@ ISR(PCINT0_vect, ISR_NOBLOCK) {
           prev_sw |= sw_press; // know which switches have been pressed
           // check to see if the mode or bank needs to change
           if ( sw_press == 0b00010001)  { // mode selection has been pressed  - sw 6 & 4 & 2
-              // if (mode & 0b00000001) { // in LoopMode
-              //   mode = mode << 1; // change to PresetMode
-              // } else { // in PresetMode
-              //   mode = mode >> 1; // change to LoopMode
-              // }
-              // if in loop mode then change to preset mode else change to loop mode
               mode == 0b00000001 ? mode = mode << 1 : mode = mode >> 1;
+              sw_press = 0; // don't want to toggle any relays
             } else if ( sw_press == 0b00011110) { // just bypass switch is pressed
               // if you press bypass again you want to come out of bypass mode
               bypass ? 0 : 1;
-              // if (bypass) {
-              //   bypass = False;
-              // } else {
-              //   prev_mode = mode; // remember the last mode for coming out of bypass
-              //   mode = 0b00000100; // bypass mode
-              //   bypass = True;
-              // }
+              sw_press = 0;
 
             } else if ( sw_press == 0b00000011) { // bank selection has been pressed - sw 8 & 6 & 4
               // change the bank
-              if (bank == 0b00001000)  { // bank D
-                bank = bank >> 3; // shift 3 bits to bank A
-              } else {
-                bank = bank << 1; // shift 1 bit to the left to the next bank
-              }
-            }
-            // set boolean flags for which relays need to change
-            // only issue is that only one relay can be changed by the switches at a time
-            // TODO: correct these to only work with 5 switches
-            // these
-            else if ( sw_press == 0b00011100 ) bt(relay1,loop_settings);
-            else if ( sw_press == 0b00011101 ) bt(relay2,loop_settings);
-            else if ( sw_press == 0b00011001 ) bt(relay3,loop_settings);
-            else if ( sw_press == 0b00011011 ) bt(relay4,loop_settings);
-            else if ( sw_press == 0b00010011 ) bt(relay5,loop_settings);
-            else if ( sw_press == 0b00010111 ) bt(relay6,loop_settings);
-            else if ( sw_press == 0b00000111 ) bt(relay7,loop_settings);
-            else if ( sw_press == 0b00001111 ) bt(relay8,loop_settings);
+              if (bank == 3) bank = 0; // bank D
+              else bank++; // increment banks
+              sw_press = 0;
 
+            } else if ( sw_press == 0b00011100 ) {
+              if (mode == 0b00000001) bt(relay1,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 0; // set the logical pin. Only one preset can be selected at a time
+
+            } else if ( sw_press == 0b00011101 ) {
+              if (mode == 0b00000001) bt(relay2,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 1;
+
+            } else if ( sw_press == 0b00011001 ) {
+              if (mode == 0b00000001) bt(relay3,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 2;
+
+            } else if ( sw_press == 0b00011011 ) {
+              if (mode == 0b00000001) bt(relay4,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 3;
+
+            } else if ( sw_press == 0b00010011 ) {
+              if (mode == 0b00000001) bt(relay5,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 4;
+
+            } else if ( sw_press == 0b00010111 ) {
+              if (mode == 0b00000001) bt(relay6,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 5;
+
+            } else if ( sw_press == 0b00000111 ) {
+              if (mode == 0b00000001) bt(relay7,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 6;
+
+            } else if ( sw_press == 0b00001111 ) {
+              if (mode == 0b00000001) bt(relay8,mode_relay_settings[LOOP]);
+              else mode_relay_settings[PRESET] = 7;
+            }
+            // remember the selected relay states
+            // prev_relay_state[LOOP] = mode_relay_settings[LOOP];
+            return;
           }
         }
+        // if you have made it this far then the switches have been held
         sw_hold = sw_press; // know which switch was held after 3 secs
       }
 
@@ -230,37 +202,170 @@ ISR(PCINT0_vect, ISR_NOBLOCK) {
 //###################
 // Misc. functions //
 //###################
-void toogle_relays(uint8_t relay_settings) {
+void toggle_loop_relays() {
     // if the relay is off then turn it on
     // mute output
     set1(BMMLED_PORT, MUTE);
     // set relay ports by toggling the correspnding port bit
     // Turning off relays will also turn off the corresponding loop led since the relay coil and led are in series
-    RELAY_PORT ^= relay_settings;
+    RELAY_PORT ^= mode_relay_settings[LOOP];
     // delay
     delay_ms_(MUTE_DELAY);
     // unmute output
     set0(BMMLED_PORT, MUTE);
-    // handle relays and switches
-    // mode_relay_settings[BLOOP] = 0;
+    // handle this variable
     sw_press = 0;
 
    return;
   }
 
-void preset_mode() {
-  // while condition to stay in this mode
-  // set the corresponding saved loops in each bank
-
-}
-
 void save_preset() {
-  //save preset to desired loop channel in the desired bank
+
+  // save the active loops to the desired bank and preset 
   // blink that loop led until all the footswitches have been release
-  //TODO: how to save a multi-index array to eeprom ? what will the memory location flag be?
+
+  uint8_t *pEE = (uint8_t *)EEPROM_START; // 0
+  eeprom_write_byte(pEE++, 0xAA); // say that the EEPROM is valid in register 1
+  // write a byte since there are 8 bits
+  // read blocks for each bank when initializing
+  // write a block that is 8 bytes long for each bank
+  // bank A address is 2-9
+  // bank B address is 10-17
+  // bank C address is 18-25
+  // bank D address is 26-33
+
+  if (sw_hold == 0b00011100) { // preset 1
+    mode_relay_settings[PRESET] = 0;
+    if (bank == 0) pEE++; // bank A -- register 2
+    else if (bank == 1) pEE = pEE + 9; // bank B
+    else if (bank == 2) pEE = pEE + 17; // bank C
+    else if (bank == 3) pEE = pEE + 25; // bank D
+
+  } else if (sw_hold == 0b00011101) { // preset 2
+    mode_relay_settings[PRESET] = 1;
+    if (bank == 0) pEE = pEE + 2; // bank A
+    else if (bank == 1) pEE = pEE + 10; // bank B
+    else if (bank == 2) pEE = pEE + 18; // bank C
+    else if (bank == 3) pEE = pEE + 26; // bank D
+
+  } else if (sw_hold == 0b00011001) { // preset 3
+    mode_relay_settings[PRESET] = 2;
+    if (bank == 0) pEE = pEE + 3; // bank A
+    else if (bank == 1) pEE = pEE + 11; // bank B
+    else if (bank == 2) pEE = pEE + 19; // bank C
+    else if (bank == 3) pEE = pEE + 27; // bank D
+
+  } else if (sw_hold == 0b00011011) { // preset 4
+    mode_relay_settings[PRESET] = 3;
+    if (bank == 0) pEE = pEE + 4; // bank A
+    else if (bank == 1) pEE = pEE + 12; // bank B
+    else if (bank == 2) pEE = pEE + 20; // bank C
+    else if (bank == 3) pEE = pEE + 28; // bank D
+
+  } else if (sw_hold == 0b00010011) { // preset 5
+    mode_relay_settings[PRESET] = 4;
+    if (bank == 0) pEE = pEE + 5; // bank A
+    else if (bank == 1) pEE = pEE + 13; // bank B
+    else if (bank == 2) pEE = pEE + 21; // bank C
+    else if (bank == 3) pEE = pEE + 29; // bank D
+
+  } else if (sw_hold == 0b00010111) { // preset 6
+    mode_relay_settings[PRESET] = 5;
+    if (bank == 0) pEE = pEE + 6; // bank A
+    else if (bank == 1) pEE = pEE + 14; // bank B
+    else if (bank == 2) pEE = pEE + 22; // bank C
+    else if (bank == 3) pEE = pEE + 30; // bank D
+
+  } else if (sw_hold == 0b00000111) { // preset 7
+    mode_relay_settings[PRESET] = 6;
+    if (bank == 0) pEE = pEE + 7; // bank A
+    else if (bank == 1) pEE = pEE + 15; // bank B
+    else if (bank == 2) pEE = pEE + 23; // bank C
+    else if (bank == 3) pEE = pEE + 31; // bank D
+
+  } else if (sw_hold == 0b00001111) { // preset 7
+    mode_relay_settings[PRESET] = 7;
+    if (bank == 0) pEE = pEE + 8; // bank A
+    else if (bank == 1) pEE = pEE + 16; // bank B
+    else if (bank == 2) pEE = pEE + 24; // bank C
+    else if (bank == 3) pEE = pEE + 32; // bank D -- register 33
+  }
+  eeprom_write_byte(pEE, mode_relay_settings[LOOP]);
+  //stay in this loop until the switches have been released
+  while (!(SWITCH_IPA & switch_mask) == switch_mask) {
+    blink_preset_led();
+  }
+
+  sw_hold = 0;
+  return;
 
 }
 
+void load_presets() {
+  int i, j;
+  uint8_t *pEE = (uint8_t *)2; // starting register for preset 1 in bank A
+  for (i=0; i<4; i++) {
+    for (j=0; j<8; j++) {
+      bank_presets[i][j] = eeprom_read_byte(pEE);
+      pEE++; // last register will be 33
+    }
+  }
+  return;
+}
+
+void get_preset() {
+  // retrieves the saved preset
+  // turn off current preset led
+  PRESETLED_PORT = 0;
+  // turn on selected preset led
+  set1(PRESETLED_PORT, mode_relay_settings[PRESET]);
+  // set loop relay port to selected preset
+  RELAY_PORT = bank_presets[bank][mode_relay_settings[PRESET];
+  return;
+}
+
+// Loop mode:
+// save current loop selections
+// turn off all loop selections
+// if no loop selections are made and bypass if pressed again then reload previous loop selections
+
+// preset mode:
+// turn off all loop selections
+// if bypass is pressed again, reload previous loop selections
+void engage_bypass(uint8_t bank) {
+
+// TODO: what happens if BP is pressed a third time witout selecting a new loop?
+  // no loop selctions have been made after the bypass
+  if (mode_relay_settings[bank] == 0) {
+    // restore previous loop selections
+    RELAY_PORT |= prev_relay_state[bank];
+  } else {
+    // save current relay settings
+    prev_relay_state[bank] = RELAY_PORT;
+    // turn off all relays
+    RELAY_PORT &= 0;
+    // set the current state of the relays
+    mode_relay_settings[bank] = 0;
+  }
+
+  bypass = 0;
+
+  return;
+}
+
+// will only blink the preset led
+void blink_preset_led() {
+  set1(PRESETLED_PORT, mode_relay_settings[PRESET]);
+  delay_ms_(LED_BLINK_DELAY);
+  set0(PRESETLED_PORT, mode_relay_settings[PRESET]);
+  delay_ms_(LED_BLINK_DELAY);
+
+  return;
+}
+
+void startup_led_show() {
+  // move preset and loop leds across two times then blink end leds
+}
 
 //###################
 // Init functions //
