@@ -29,20 +29,14 @@ void blink_preset_led(void);
 uint8_t switch_mask = 0x1F; // only 5 sitches and not all of them can be pressed at the sametime for an action to take place
 volatile uint16_t milliseconds = 0; // uC millisecond counter used in delay_ms_(), and is reset throughout the application
 volatile uint8_t mode = 0b00000001; // 0b00000001 = LoopMode, 0b00000010 = PresetMode
-volatile uint8_t prev_mode = 0; // previous mode
 volatile uint8_t bank = 0; // start in BankA, 1 = BankB, 2 = BankC, 3 = BankD
-volatile uint8_t loop_settings = 0b00000000; // loop that wants to be set regardless of which mode you are in
 volatile uint8_t bypass = 0;
-// typedef int bool; // define boolean type
-// #define True 1
-// #define False 0
 
 // switch related globals:
 volatile uint8_t sw_press = 0b00000000; // which switch was pressed
 volatile uint8_t prev_sw = 0b00000000;
 volatile uint8_t sw_hold = 0b00000000; // which switches were held
 volatile uint16_t sw_hold_timer = 0; // to detect switch holds
-// volatile uint16_t sw_inactivity_timer = 0;
 
 // indexed variables
 volatile uint8_t mode_relay_settings[BOOL_BANK_SIZE] = { 0, 0 }; // global boolean relay values per mode
@@ -187,8 +181,6 @@ ISR(PCINT0_vect, ISR_NOBLOCK) {
               if (mode == 0b00000001) bt(relay8,mode_relay_settings[LOOP]);
               else mode_relay_settings[PRESET] = 7;
             }
-            // remember the selected relay states
-            // prev_relay_state[LOOP] = mode_relay_settings[LOOP];
             return;
           }
         }
@@ -221,9 +213,8 @@ void toggle_loop_relays() {
 
 void save_preset() {
 
-  // save the active loops to the desired bank and preset 
+  // save the active loops to the desired bank and preset
   // blink that loop led until all the footswitches have been release
-
   uint8_t *pEE = (uint8_t *)EEPROM_START; // 0
   eeprom_write_byte(pEE++, 0xAA); // say that the EEPROM is valid in register 1
   // write a byte since there are 8 bits
