@@ -40,7 +40,6 @@ volatile uint16_t sw_hold_timer = 0; // to detect switch holds
 
 // indexed variables
 volatile uint8_t mode_relay_settings[BOOL_BANK_SIZE] = { 0, 0 }; // global boolean relay values per mode
-// volatile uint8_t bypass_mode[BOOL_BANK_SIZE] = { 0, 0 };  // start out not in bypass for each mode
 volatile uint8_t prev_relay_state[BOOL_BANK_SIZE] = { 0, 0 }; // previous relay state for each mode. integer values are from 0-255
 volatile uint8_t bank_presets[PRESET_BANK_SIZE][PRESET_LOOP_SIZE] = {
                   {0, 0, 0, 0, 0, 0, 0, 0}, // A
@@ -138,6 +137,7 @@ ISR(PCINT0_vect, ISR_NOBLOCK) {
           if ( sw_press == 0b00010001)  { // mode selection has been pressed  - sw 6 & 4 & 2
               mode == 0b00000001 ? mode = mode << 1 : mode = mode >> 1;
               sw_press = 0; // don't want to toggle any relays
+              +
             } else if ( sw_press == 0b00011110) { // just bypass switch is pressed
               // if you press bypass again you want to come out of bypass mode
               bypass ? 0 : 1;
@@ -315,21 +315,12 @@ void get_preset() {
   return;
 }
 
-// Loop mode:
-// save current loop selections
-// turn off all loop selections
-// if no loop selections are made and bypass if pressed again then reload previous loop selections
-
-// preset mode:
-// turn off all loop selections
-// if bypass is pressed again, reload previous loop selections
 void engage_bypass(uint8_t bank) {
-
-// TODO: what happens if BP is pressed a third time witout selecting a new loop?
   // no loop selctions have been made after the bypass
   if (mode_relay_settings[bank] == 0) {
     // restore previous loop selections
     RELAY_PORT |= prev_relay_state[bank];
+    mode_relay_settings[bank] = prev_relay_state[bank];
   } else {
     // save current relay settings
     prev_relay_state[bank] = RELAY_PORT;
