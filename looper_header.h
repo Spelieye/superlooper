@@ -69,12 +69,11 @@
 #define BANKALED 0
 #define BANKBLED 1
 #define BANKCLED 2
-#define BANKDLED 3
 // Mode bits
-#define PRESETMODELED 4
-#define LOOPMODELED 5
+#define PRESETMODELED 3
+#define LOOPMODELED 4
 // Mute bit
-#define MUTE 6
+#define MUTE 5
 
 // Switch related timers
 //#define	SW_INACTIVITY_TMR		4000	// miliseconds to pronounce inactivity of switch(es) input

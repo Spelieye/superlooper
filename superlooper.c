@@ -24,6 +24,7 @@ void get_preset(void);
 void startup_led_show(void);
 void engage_bypass(uint8_t);
 void blink_preset_led(void);
+void set_bank_leds(void);
 
 // global variables
 uint8_t switch_mask = 0x1F; // only 5 sitches and not all of them can be pressed at the sametime for an action to take place
@@ -47,7 +48,6 @@ volatile uint8_t bank_presets[PRESET_BANK_SIZE][PRESET_LOOP_SIZE] = {
                   {0, 0, 0, 0, 0, 0, 0, 0}, // C
                   {0, 0, 0, 0, 0, 0, 0, 0}, // D
                 }; // bank presets
-
 
 //############
 // Main app //
@@ -79,7 +79,6 @@ int main(void) {
       // stay in loop mode
         while (mode == 0b00000001) {
           // set relays and handle sw_press
-          // TODo: only want a loop selection to tigger an action
           if (bypass) engage_bypass(LOOP);
           else if (sw_press) toggle_loop_relays();
           // handle switch hold and save preset
@@ -92,7 +91,15 @@ int main(void) {
         // turn on preset mode led and loop led off
         set0(BMMLED_PORT, LOOPMODELED);
         set1(BMMLED_PORT, PRESETMODELED);
+        // get previous preset loop setting?
+        get_preset();
+
+        // TODO: if I switch banks then the presets need to change to the previous loop selection for that bank
+
         while (mode == 0b00000010) {
+
+          // start in default loop 1 ?
+
           if (bypass) engage_bypass(PRESET);
           else if (sw_press) get_preset();
         }
@@ -117,27 +124,30 @@ ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
 //##############################
 ISR(PCINT0_vect, ISR_NOBLOCK) {
 
-// check to see if any button was pressed
-
+// check to see if any switch was pressed
+// not all the swtiches will be pressed at the same time
   if( (SWITCH_IPA & switch_mask) < switch_mask ) {
     // see if it wasn't pressed at all
       delay_ms_(SW_DEBOUNCE_TIME);
       if ( (SWITCH_IPA & switch_mask) == switch_mask ) { // if a pin is still not GND after 50ms this was an error
         return;
       }
-
-      sw_press = (SWITCH_IPA & switch_mask); // remember which switch was pressed b/c it's been longer than 50ms
+      // PortB is held high, so need to get the inverse bit to get
+      // PINA = 0b00011111
+      // switch 1 and 2 are pressed --> PINA: 0b00011100
+      // switch_mask: 0b00011111
+      prev_sw = (SWITCH_IPA & switch_mask); // remember which switch was pressed b/c it's been longer than 50ms
 
       sw_hold_timer = SW_HOLD_TMR;
       while (sw_hold_timer > 0) {
         // switch was released in the mean time
         if ( (SWITCH_IPA & switch_mask) == switch_mask ) {
-          prev_sw |= sw_press; // know which switches have been pressed
+          sw_press |= prev_sw; // know which switches have been pressed
           // check to see if the mode or bank needs to change
           if ( sw_press == 0b00010001)  { // mode selection has been pressed  - sw 6 & 4 & 2
               mode == 0b00000001 ? mode = mode << 1 : mode = mode >> 1;
-              sw_press = 0; // don't want to toggle any relays
-              +
+              sw_press = 0;
+
             } else if ( sw_press == 0b00011110) { // just bypass switch is pressed
               // if you press bypass again you want to come out of bypass mode
               bypass ? 0 : 1;
@@ -147,7 +157,8 @@ ISR(PCINT0_vect, ISR_NOBLOCK) {
               // change the bank
               if (bank == 3) bank = 0; // bank D
               else bank++; // increment banks
-              sw_press = 0;
+              sw_press = 0; // don't want to toggle any relays
+              set_bank_leds();
 
             } else if ( sw_press == 0b00011100 ) {
               if (mode == 0b00000001) bt(relay1,mode_relay_settings[LOOP]);
@@ -186,6 +197,7 @@ ISR(PCINT0_vect, ISR_NOBLOCK) {
         }
         // if you have made it this far then the switches have been held
         sw_hold = sw_press; // know which switch was held after 3 secs
+        // sw_press = 0; // wasn't a press but a hold
       }
 
   return;
@@ -198,9 +210,8 @@ void toggle_loop_relays() {
     // if the relay is off then turn it on
     // mute output
     set1(BMMLED_PORT, MUTE);
-    // set relay ports by toggling the correspnding port bit
-    // Turning off relays will also turn off the corresponding loop led since the relay coil and led are in series
-    RELAY_PORT ^= mode_relay_settings[LOOP];
+    // set relay port to desired settings
+    RELAY_PORT = mode_relay_settings[LOOP];
     // delay
     delay_ms_(MUTE_DELAY);
     // unmute output
@@ -287,7 +298,7 @@ void save_preset() {
     blink_preset_led();
   }
 
-  sw_hold = 0;
+  sw_hold = 0; // handle variable
   return;
 
 }
@@ -298,7 +309,7 @@ void load_presets() {
   for (i=0; i<4; i++) {
     for (j=0; j<8; j++) {
       bank_presets[i][j] = eeprom_read_byte(pEE);
-      pEE++; // last register will be 33
+      pEE = pEE + 1; // last register will be 33
     }
   }
   return;
@@ -311,7 +322,7 @@ void get_preset() {
   // turn on selected preset led
   set1(PRESETLED_PORT, mode_relay_settings[PRESET]);
   // set loop relay port to selected preset
-  RELAY_PORT = bank_presets[bank][mode_relay_settings[PRESET];
+  RELAY_PORT = bank_presets[bank][mode_relay_settings[PRESET]];
   return;
 }
 
@@ -345,8 +356,43 @@ void blink_preset_led() {
   return;
 }
 
+void set_bank_leds() {
+  // turn off all bank LEDs
+  bc(BANKALED, BMMLED_PORT);
+  bc(BANKBLED, BMMLED_PORT);
+  bc(BANKCLED, BMMLED_PORT);
+  // turn on selected bank led
+  // 0 - a
+  // 1 - b
+  // 2 - c
+  // 1, 2 - d
+  if (bank == 1) bs(BANKALED, BMMLED_PORT);
+  else if (bank == 2) bs(BANKBLED, BMMLED_PORT);
+  else if (bank == 3) bs(BANKCLED, BMMLED_PORT);
+  else {
+    bs(BANKALED, BMMLED_PORT);
+    bs(BANKCLED, BMMLED_PORT);
+  }
+  return;
+}
+
 void startup_led_show() {
-  // move preset and loop leds across two times then blink end leds
+  // create random array of size 16 led numbers and turn them on
+  // move preset leds across two times then blink end leds
+  // blink preset 1 led
+  int8_t rando, i, lower = 0, upper = 7, count = 8;
+  for (i=0; i<count; i++) {
+    rando = (rand() % (upper-lower+1)) + lower;
+    set1(PRESETLED_PORT, rando);
+    delay_ms_(LED_BLINK_DELAY);
+    set0(PRESETLED_PORT, rando);
+    delay_ms_(LED_BLINK_DELAY);
+  }
+  // blink led 1 three times
+  for (i=0; i<3; i++) {
+    blink_preset_led();
+  }
+return;
 }
 
 //###################
@@ -356,9 +402,9 @@ void init_pins() {
 
   // Switches
   SWITCH_DDR &= ~_BV(SWITCH1) | ~_BV(SWITCH2) | ~_BV(SWITCH3) | ~_BV(SWITCH4)
-                  | ~_BV(SWITCH5) | ~_BV(SWITCH6);
+                  | ~_BV(SWITCH5);
   SWITCH_PORT |= _BV(SWITCH1) | _BV(SWITCH2) | _BV(SWITCH3) | _BV(SWITCH4)
-                  | _BV(SWITCH5) | _BV(SWITCH6); // turn ON interal pullups
+                  | _BV(SWITCH5); // turn ON interal pullups
 
   // Relays
   RELAY_DDR |= _BV(RELAY1) | _BV(RELAY2) | _BV(RELAY3) | _BV(RELAY4) | _BV(RELAY5)
