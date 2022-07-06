@@ -306,8 +306,8 @@ void save_preset() {
 void load_presets() {
   int i, j;
   uint8_t *pEE = (uint8_t *)2; // starting register for preset 1 in bank A
-  for (i=0; i<4; i++) {
-    for (j=0; j<8; j++) {
+  for (i=0; i<PRESET_BANK_SIZE; i++) {
+    for (j=0; j<PRESET_LOOP_SIZE; j++) {
       bank_presets[i][j] = eeprom_read_byte(pEE);
       pEE = pEE + 1; // last register will be 33
     }
@@ -377,10 +377,10 @@ void set_bank_leds() {
 }
 
 void startup_led_show() {
-  // create random array of size 16 led numbers and turn them on
+  // create random array of size 8 led numbers and turn them on
   // move preset leds across two times then blink end leds
   // blink preset 1 led
-  int8_t rando, i, lower = 0, upper = 7, count = 8;
+  int rando, i, lower = 0, upper = 7, count = 8;
   for (i=0; i<count; i++) {
     rando = (rand() % (upper-lower+1)) + lower;
     set1(PRESETLED_PORT, rando);
