@@ -7,7 +7,7 @@
  *
 ****************************************************/
 
-// define the Atmel ATmega328 pins to be used
+// define the Atmel ATmega644 pins to be used
 
 // Clock Frequency
 #define F_CPU 1000000UL // 1MHz
@@ -25,11 +25,11 @@
 
 // bits
 // TODO: there will only be 5 switches
-#define SWITCH1 0   // loop 8
-#define SWITCH2 1   // loop 6
+#define SWITCH1 0   // bypass
+#define SWITCH2 1   // loop 2
 #define SWITCH3 2   // loop 4
-#define SWITCH4 3   // loop 2
-#define SWITCH5 4   // bypass
+#define SWITCH4 3   // loop 6
+#define SWITCH5 4   // loop 8
 
 // Pin Outputs
 
@@ -69,14 +69,14 @@
 #define BANKALED 0
 #define BANKBLED 1
 #define BANKCLED 2
+#define BANKDLED 3
 // Mode bits
-#define PRESETMODELED 3
-#define LOOPMODELED 4
+#define PRESETMODELED 4 // these have been switched for my reversal of the LED's on the PCB
+#define LOOPMODELED 5
 // Mute bit
 #define MUTE 5
 
 // Switch related timers
-//#define	SW_INACTIVITY_TMR		4000	// miliseconds to pronounce inactivity of switch(es) input
 #define	SW_HOLD_TMR			3000		// miliseconds to pronounce switch(es) as held rather than pressed
 #define SW_DEBOUNCE_TIME 25 // ms
 #define MUTE_DELAY 8 // ms
@@ -92,7 +92,7 @@
 #define set1(port, pin)			( (port) |= (uint8_t)_BV(pin) )
 
 // Boolean macros
-#define	LOOP				     0 	// bank index[0] for preset mode relay states
+#define	LOOP		     0 	// bank index[0] for preset mode relay states
 #define PRESET           1	 // bank index[1] for loop mode relay states
 #define BOOL_BANK_SIZE	 2	 // how many bytes in the array
 #define PRESET_BANK_SIZE 4  // how many banks
@@ -100,24 +100,14 @@
 
 
 // boolean bit/flags bank 1 - Presets
-#define preset1   0
-#define preset2   1
-#define preset3   2
-#define preset4   3
-#define preset5   4
-#define preset6   5
-#define preset7   6
-#define preset8   7
-
-// boolean bit/flags bank 2 - Switch specific
-#define relay1 0
-#define relay2 1
-#define relay3 2
-#define relay4 3
-#define relay5 4
-#define relay6 5
-#define relay7 6
-#define relay8 7
+#define PRESET1   0
+#define PRESET2   1
+#define PRESET3   2
+#define PRESET4   3
+#define PRESET5   4
+#define PRESET6   5
+#define PRESET7   6
+#define PRESET8   7
 
 #define bv(bit,bank) 			( (bank) & (uint8_t)_BV(bit) ) 	// boolean values GET/READ macro: if(bv(3,BSYS))...
 #define	bs(bit,bank) 			( (bank) |= (uint8_t)_BV(bit) ) 	// boolean values SET macro: bs(5,BSYS)
