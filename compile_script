@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# This script will run a complier and convert .c to .hex
+# Use: ./compile_script.sh
+
+set -Eeo pipefail
+
+on_fail() {
+  echo "There was an issue, see error above"
+}
+
+trap on_fail ERR
+
+read -p "What is your target MCU? (Default atmega328p):  " name
+avr_name=${name:-atmega328p}
+read -p "Name of .c program without suffix (ex: led): " program
+program_name=${program}
+
+if [ -n "$program_name" ] && [ -f "$program_name.c" ]; then
+  echo "Compiling $program_name.c to $program_name.hex:"
+  echo
+  avr-gcc -time -g -Os -mmcu=$avr_name -c $program_name.c
+  avr-gcc -time -g -mmcu=$avr_name -o $program_name.elf $program_name.o
+  avr-objcopy -j .text -j .data -O ihex $program_name.elf $program_name.hex
+  echo
+  avr-size --format=avr --mcu=$avr_name $program_name.elf
+  echo "Done!"
+else
+  echo "No program name given or filepath does not exist for: $program_name"
+fi
