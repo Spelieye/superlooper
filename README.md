@@ -33,7 +33,7 @@ For the LEDs, put them through the bottom of the PCB and bend the long leg a bit
 
 ![IMG_7405](https://github.com/Spelieye/superlooper/assets/36861919/555c350e-afc7-4dfe-9d23-c1ed49c76e8d)
 
-![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/7d000a00-eb9d-4c5a-bb08-6454d346aa5c)
+![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/63d0b6e5-b313-4154-aa68-05acf0ae9a9b)
 
 Note: The silkscreen on the prototype PCB doesn't match the actual placement of the red and green LEDs. They are switched, this was an accident when I was creating the PCB but I actually like having the red loop leds closer to the switches. Happy accident. I've updated the silkscreen in the PCB files to show the correct placement of the LEDs. 
 
@@ -41,7 +41,8 @@ Note: The silkscreen on the prototype PCB doesn't match the actual placement of 
 
 ![IMG_7419](https://github.com/Spelieye/superlooper/assets/36861919/7dc00aa5-37fd-4301-874e-28c274d75c04)
 
-![IMG_7417](https://github.com/Spelieye/superlooper/assets/36861919/03dc7b7e-83db-42d3-9e2b-ecbfd1653f31)
+![IMG_7417](https://github.com/Spelieye/superlooper/assets/36861919/57925103-fb88-4e7c-9d1d-4d90625d3dda)
+*Switches have been labled. 1 - 5 right to left*
 
 ## Programming
 
@@ -52,7 +53,7 @@ The addition of ISP pins on the PCB makes flashing the chip easy, no need to rem
 
 To flash the chip do the following in a terminal: 
 1. Cd into the directory that contains `superlooper.c` and `compile_script`
-2. `./compile_script`
+2. `./compile_script` this will create a `.hex` file that can be flashed to the chip
 3. The first prompt of the script will ask what MCU you are going to use, put `atmega644` and type `superlooper` into the next prompt. Here is the cli:
  ```
 What is your target MCU? (Default atmega328p):  atmega644
@@ -76,7 +77,28 @@ Data:         50 bytes (1.2% Full)
 
 Done!
 ```
-4. 
+4. Use `avr-dude` to change the chip fuses, which needs to be done to undo JTAG programming to allow some of the I/O pins to be used as outputs and to flash the `.hex` file
+```
+avrdude -c usbtiny -p m644 -U lfuse:w:0x62:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m -U flash:w:superlooper.hex
+```
+5. Enjoy looping madness!
+
+![IMG_7414](https://github.com/Spelieye/superlooper/assets/36861919/f4ab234d-61b5-48ef-983e-fd0dcbe84cfd)
+*Looper in the preset mode* 
+
+## Features 
+
+This looper was programmed to have the same features as the BYOC super8 with a couple minor tweaks. Here's a video for how to use the looper: [How to use the pedal](https://www.youtube.com/watch?v=KKhdrYQu3Yc)
+
+Here are the changes that I made: 
+1. To change mode press switch 1, 2, and 3
+2. To change bank press switch 3, 4, and 5
+3. If you want to save a preset with all the loops on, you can do that once per bank.
+4. There are two startup led sequences I programmed that happen upon powering on the pedal. You can comment those out in the code if you don't want them but I have the sequence led function on and it's pretty cool.
+
+That's about it, I hope you enjoy!
+
+
 
 
 
