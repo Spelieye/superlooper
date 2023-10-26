@@ -11,7 +11,7 @@ I create a PCB for the project. The Gerber files are available in this repo so y
 
 ![superlooper_pcb](https://github.com/Spelieye/superlooper/assets/36861919/1f62ba5a-4f87-4298-baff-512ab6a072ce)
 
-I used a [1032L enclosure](https://www.taydaelectronics.com/hardware/enclosures/1032l-style.html). I create a drill template that can be placed on the enclosure. Cutout along the edges keeping the whitespace between the two faces. Align the bottom of the face with all the jacks to be inbetween the screw columns, tape, wrap around to the top, tape some more and you should have the template aligned properly. I center tapped, drilled pilot holes, then used a stepper drill bit for all the holes. Note: I had to drill all the holes for the PCB mounted jacks to 12mm to add tolerance so the PCB mounted jacks all fit since hand drilling isn't super precisce. 
+I used a [1032L enclosure](https://www.taydaelectronics.com/hardware/enclosures/1032l-style.html). I create a drill template that can be placed on the enclosure. Cutout along the edges keeping the whitespace between the two faces. Align the bottom of the face with all the jacks to be inbetween the screw columns, tape, wrap around to the top, tape some more and you should have the template aligned properly. I center tapped, drilled pilot holes, then used a stepper drill bit for all the holes. Note: I had to drill all the holes for the PCB mounted jacks to 12mm to have tolerance so the PCB mounted jacks all fit since hand drilling isn't super precisce. 
 
 ![IMG_7229](https://github.com/Spelieye/superlooper/assets/36861919/99b4512d-16dc-49eb-b74e-eacef47a6297)
 
@@ -19,7 +19,66 @@ I used a [1032L enclosure](https://www.taydaelectronics.com/hardware/enclosures/
 
 ![IMG_7232](https://github.com/Spelieye/superlooper/assets/36861919/625e191c-4c72-43d2-b1eb-c74cabf8c1fe)
 
+### Populated PCB: 
+
+![IMG_7256](https://github.com/Spelieye/superlooper/assets/36861919/5ddfab00-7a8d-4e93-8c3c-fda147196651)
+
+### Wiring it up: 
+
+![IMG_7403](https://github.com/Spelieye/superlooper/assets/36861919/91c6aeb5-ffa9-44d6-af2f-69c7692887ac)
+
+![IMG_7404](https://github.com/Spelieye/superlooper/assets/36861919/524ad3cd-bcf7-4a28-979b-e018121ad99e)
+
+For the LEDs, put them through the bottom of the PCB and bend the long leg a bit to keep them from falling out when the PCB is mounted into the enclosure. Green on top row and red on the bottom row.
+
+![IMG_7405](https://github.com/Spelieye/superlooper/assets/36861919/555c350e-afc7-4dfe-9d23-c1ed49c76e8d)
+
+![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/7d000a00-eb9d-4c5a-bb08-6454d346aa5c)
+
+Note: The silkscreen on the prototype PCB doesn't match the actual placement of the red and green LEDs. They are switched, this was an accident when I was creating the PCB but I actually like having the red loop leds closer to the switches. Happy accident. I've updated the silkscreen in the PCB files to show the correct placement of the LEDs. 
+
+### Final Assembly:
+
+![IMG_7419](https://github.com/Spelieye/superlooper/assets/36861919/7dc00aa5-37fd-4301-874e-28c274d75c04)
+
+![IMG_7417](https://github.com/Spelieye/superlooper/assets/36861919/03dc7b7e-83db-42d3-9e2b-ecbfd1653f31)
 
 ## Programming
 
-The addition of ISP pins on the PCB makes flashing the chip easy, no need to remove the chip from the socket anytime you want to change something, amazing! 
+The addition of ISP pins on the PCB makes flashing the chip easy, no need to remove the chip from the socket anytime you want to change something, amazing! I used a [Pocket AVR Programmer](https://www.sparkfun.com/products/9825), `avr-dude`, and a compile script which relies on `avr-gcc`. 
+
+![IMG_7415](https://github.com/Spelieye/superlooper/assets/36861919/44a3020e-bfe4-4595-b616-227e2e0e41e3)
+*AVR Programmer connected to the ISP port*
+
+To flash the chip do the following in a terminal: 
+1. Cd into the directory that contains `superlooper.c` and `compile_script`
+2. `./compile_script`
+3. The first prompt of the script will ask what MCU you are going to use, put `atmega644` and type `superlooper` into the next prompt. Here is the cli:
+ ```
+What is your target MCU? (Default atmega328p):  atmega644
+Name of .c program without suffix (ex: led): superlooper
+Compiling superlooper.c to superlooper.hex:
+
+# cc1 0.08 0.02
+# as 0.00 0.00
+# collect2 0.01 0.01
+
+AVR Memory Usage
+----------------
+Device: atmega644
+
+Program:    3192 bytes (4.9% Full)
+(.text + .data + .bootloader)
+
+Data:         50 bytes (1.2% Full)
+(.data + .bss + .noinit)
+
+
+Done!
+```
+4. 
+
+
+
+
+
