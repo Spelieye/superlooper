@@ -26,16 +26,19 @@ I used a [1032L enclosure](https://www.taydaelectronics.com/hardware/enclosures/
 ### Wiring it up: 
 
 ![IMG_7403](https://github.com/Spelieye/superlooper/assets/36861919/91c6aeb5-ffa9-44d6-af2f-69c7692887ac)
+*Wiring the switches*
 
 ![IMG_7404](https://github.com/Spelieye/superlooper/assets/36861919/524ad3cd-bcf7-4a28-979b-e018121ad99e)
+*Everything wired up and needed to to be pushed down for the PCB jacks to fit into the lower holes (top holes, depending on orientation)*
 
-For the LEDs, put them through the bottom of the PCB and bend the long leg a bit to keep them from falling out when the PCB is mounted into the enclosure. Green on top row and red on the bottom row.
+For the LEDs, put them through the bottom of the PCB and bend the long leg a bit to keep them from falling out when the PCB is mounted into the enclosure. Green on top row and red on the bottom row. Once the PCB is mounted you can work the LEDs into their position, either into a hole or into an [LED holder](https://www.taydaelectronics.com/5mm-led-lampshade-protector-clear.html) that I used. It's a pain in the ass to get them all in so make sure the LEDs work before you solder them into place.
+
+Note: The silkscreen on the prototype PCB doesn't match the actual placement of the red and green LEDs. They are switched, this was an accident when I was creating the PCB but I actually like having the red loop leds closer to the switches. Happy accident. I've updated the silkscreen in the PCB files to show the correct placement of the LEDs. 
 
 ![IMG_7405](https://github.com/Spelieye/superlooper/assets/36861919/555c350e-afc7-4dfe-9d23-c1ed49c76e8d)
 
 ![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/63d0b6e5-b313-4154-aa68-05acf0ae9a9b)
 
-Note: The silkscreen on the prototype PCB doesn't match the actual placement of the red and green LEDs. They are switched, this was an accident when I was creating the PCB but I actually like having the red loop leds closer to the switches. Happy accident. I've updated the silkscreen in the PCB files to show the correct placement of the LEDs. 
 
 ### Final Assembly:
 
@@ -77,10 +80,12 @@ Data:         50 bytes (1.2% Full)
 
 Done!
 ```
-4. Use `avr-dude` to change the chip fuses, which needs to be done to undo JTAG programming to allow some of the I/O pins to be used as outputs and to flash the `.hex` file
+4. Use `avr-dude` to change the chip fuses, which needs to be done to undo JTAG programming to allow some of the I/O pins to be used as outputs, and to flash the `superlooper.hex` file. 
 ```
 avrdude -c usbtiny -p m644 -U lfuse:w:0x62:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m -U flash:w:superlooper.hex
 ```
+Here is a great [AVR Fuse Calculator](https://www.engbedded.com/fusecalc/) if you are curious. 
+
 5. Enjoy looping madness!
 
 ![IMG_7414](https://github.com/Spelieye/superlooper/assets/36861919/f4ab234d-61b5-48ef-983e-fd0dcbe84cfd)
@@ -93,7 +98,7 @@ This looper was programmed to have the same features as the BYOC super8 with a c
 Here are the changes that I made: 
 1. To change mode press switch 1, 2, and 3
 2. To change bank press switch 3, 4, and 5
-3. If you want to save a preset with all the loops on, you can do that once per bank.
+3. If you want to save a preset with all the loops on, you can do that once per bank. You're welcome crazy person.
 4. There are two startup led sequences I programmed that happen upon powering on the pedal. You can comment those out in the code if you don't want them but I have the sequence led function on and it's pretty cool.
 
 That's about it, I hope you enjoy!
