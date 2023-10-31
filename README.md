@@ -107,6 +107,13 @@ Here are the changes that I made:
 
 That's about it, I hope you enjoy!
 
+### Power Requirements 
+
+* 9V @ 260mA
+  
+
+
+
 
 
 
