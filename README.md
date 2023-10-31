@@ -1,13 +1,13 @@
 # superlooper
 An open source programmable looping pedal based off of the BYOC super8 pedal. 
 
-I couldn't find any open source code or projects for a looping pedal so I decided to reverse engineer/make my own. Now you, the reader of this readme file, has access to schematics, pcb layout, code, gerber files, etc. for building or modifying your own looper pedal to do whatever you want or exaclty how I designed it! 
+I couldn't find any open source code or projects for a looping pedal so I decided to reverse engineer/make my own. Now you, the reader of this readme file, has access to schematics, pcb layout, code, gerber files, etc. for building or modifying your own looper pedal to do whatever you want! 
 
 ## The Build 
 
 I decided to use an Atmel ATMEGA-644V-10PU chip for this looper. Why you might ask? Isn't that chip more expensive? Why not use a PIC controller? Well, I already have an AVR Pocket Programmer and experience flashing and programming Attinys and I didn't want to get a PIC programmer, so I decided to stick with what I knew. Plus the ATMEGA isn't that much more expense and has all the I/O pins that I needed. 
 
-I create a PCB for the project. The Gerber files are available in this repo so you can use whatever pcb service you want. I used OSH Park, it cost about $110 for a minimum of three boards so about $36.70/board. The purple boards they make are cool. 
+I create a PCB for the project. The Gerber files are available in this repo so you can use whatever pcb service you want. I used OSH Park, it cost about $110 for a minimum of three of these boards so about $36.70/board. The purple boards they make are cool. 
 
 ![superlooper_pcb](https://github.com/Spelieye/superlooper/assets/36861919/1f62ba5a-4f87-4298-baff-512ab6a072ce)
 
@@ -29,7 +29,7 @@ I used a [1032L enclosure](https://www.taydaelectronics.com/hardware/enclosures/
 *Wiring the switches*
 
 ![IMG_7404](https://github.com/Spelieye/superlooper/assets/36861919/524ad3cd-bcf7-4a28-979b-e018121ad99e)
-*Everything wired up and needed to to be pushed down for the PCB jacks to fit into the lower holes (top holes, depending on orientation)*
+*Everything wired up and needing to be pushed down for the PCB jacks to fit into the lower holes (top holes, depending on orientation)*
 
 For the LEDs, put them through the bottom of the PCB and bend the long leg a bit to keep them from falling out when the PCB is mounted into the enclosure. Green on top row and red on the bottom row. Once the PCB is mounted you can work the LEDs into their position, either into a hole or into an [LED holder](https://www.taydaelectronics.com/5mm-led-lampshade-protector-clear.html) that I used. It's a pain in the ass to get them all in so make sure the LEDs work before you solder them into place.
 
@@ -38,7 +38,6 @@ Note: The silkscreen on the prototype PCB doesn't match the actual placement of 
 ![IMG_7405](https://github.com/Spelieye/superlooper/assets/36861919/555c350e-afc7-4dfe-9d23-c1ed49c76e8d)
 
 ![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/63d0b6e5-b313-4154-aa68-05acf0ae9a9b)
-
 
 ### Final Assembly:
 
@@ -84,6 +83,11 @@ Done!
 ```
 avrdude -c usbtiny -p m644 -U lfuse:w:0x62:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m -U flash:w:superlooper.hex
 ```
+The fuses only need to be changed once so to update the firmware if you make any changes you only need to run:
+```
+avrdude -c usbtiny -p m644 -U flash:w:superlooper.hex
+```
+
 Here is a great [AVR Fuse Calculator](https://www.engbedded.com/fusecalc/) if you are curious. 
 
 5. Enjoy looping madness!
