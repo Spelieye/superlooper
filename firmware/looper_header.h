@@ -19,12 +19,10 @@
 #define SWITCH_PORT       PORTA
 #define SWITCH_DDR        DDRA
 #define SWITCH_IPA        PINA
-#define SWITCH_PCICRBIT   PCIE0  // will enable pin intterupts on PCINT5:0 // TODO: correct this
+#define SWITCH_PCICRBIT   PCIE0  // will enable pin intterupts on PCINT5:0
 #define SWITCH_PCMSK      PCMSK0  // set to value 0x3F, first 5 bits PCINT0-5
 #define SWITCH_PCINTBITS  0x1F  // 0b11111
-
 // bits
-// TODO: there will only be 5 switches
 #define SWITCH1 0   // bypass
 #define SWITCH2 1   // loop 2
 #define SWITCH3 2   // loop 4

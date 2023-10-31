@@ -31,7 +31,7 @@ void set_bank_leds(void);
 void switch_logic(void);
 
 // global variables
-uint8_t switch_mask = _BV(SWITCH1) | _BV(SWITCH2) | _BV(SWITCH3) | _BV(SWITCH4) | _BV(SWITCH5); // 0x1F - 0b11111 only 5 switches
+uint8_t switch_mask = SWITCH_PCINTBITS; // 0x1F - 0b11111 only 5 switches
 volatile uint16_t milliseconds = 0; // uC millisecond counter used in delay_ms_(), and is reset throughout the application
 volatile uint8_t mode = 1; // 1 = LoopMode, 2 = PresetMode
 volatile uint8_t bank = 0; // start in 0 = BankA, 1 = BankB, 2 = BankC, 3 = BankD
@@ -150,9 +150,9 @@ return 0;
 // Interrupt: TIMER0_OVF_vect //
 //##############################
 ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
-  // timer interupt will occur about every 16 ms
-  milliseconds = milliseconds + 16; // no need to handle this since unassigned integers can never overflow in C
-  if (sw_hold_timer < SW_HOLD_TMR) sw_hold_timer = sw_hold_timer + 16; 
+  // timer interupt will occur about every 2 ms
+  milliseconds = milliseconds + 2; // no need to handle this since unassigned integers can never overflow in C
+  if (sw_hold_timer < SW_HOLD_TMR) sw_hold_timer = sw_hold_timer + 2; 
 }
 
 
@@ -564,7 +564,7 @@ void init_interrupts() {
   PCICR |= _BV(SWITCH_PCICRBIT);// enable wanted PCIR bits
 
   // use timer0 overflow -- 8-bit timer (can count to 255 before overflow)
-  TCCR0B |= _BV(CS01) | _BV(CS00); // 1/(1M/64/256) --> 16ms 
+  TCCR0B |= _BV(CS01); // 1/(1M/8/256) --> 2ms
   TIMSK0 |= _BV(TOIE0); // enable timer overflow interrupt
 
   sei(); // enable interupts
