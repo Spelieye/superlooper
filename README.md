@@ -9,48 +9,48 @@ I decided to use an Atmel ATMEGA-644V-10PU chip for this looper. Why you might a
 
 I create a PCB for the project. The Gerber files are available in this repo so you can use whatever pcb service you want. I used OSH Park, it cost about $110 for a minimum of three of these boards so about $36.70/board. The purple boards they make are cool. 
 
-![superlooper_pcb](https://github.com/Spelieye/superlooper/assets/36861919/1f62ba5a-4f87-4298-baff-512ab6a072ce)
+![superlooper_pcb](https://github.com/Spelieye/superlooper/assets/36861919/cb1c406b-90b2-4b55-8693-5ca40a13ad70)
 
 I used a [1032L enclosure](https://www.taydaelectronics.com/hardware/enclosures/1032l-style.html). I create a drill template that can be placed on the enclosure. Cutout along the edges keeping the whitespace between the two faces. Align the bottom of the face with all the jacks to be inbetween the screw columns, tape, wrap around to the top, tape some more and you should have the template aligned properly. I center tapped, drilled pilot holes, then used a stepper drill bit for all the holes. Note: I had to drill all the holes for the PCB mounted jacks to 12mm to have tolerance so the PCB mounted jacks all fit since hand drilling isn't super precisce. 
 
-![IMG_7229](https://github.com/Spelieye/superlooper/assets/36861919/99b4512d-16dc-49eb-b74e-eacef47a6297)
+![IMG_7229](https://github.com/Spelieye/superlooper/assets/36861919/9c1bf084-68d5-457d-b879-7cf54a031f0c)
 
-![IMG_7231](https://github.com/Spelieye/superlooper/assets/36861919/2387f791-5252-4d6d-b9d5-d02895788efb)
+![IMG_7231](https://github.com/Spelieye/superlooper/assets/36861919/47ed8318-5f2b-483e-b495-c9594be5f95e)
 
-![IMG_7232](https://github.com/Spelieye/superlooper/assets/36861919/625e191c-4c72-43d2-b1eb-c74cabf8c1fe)
+![IMG_7232](https://github.com/Spelieye/superlooper/assets/36861919/4012924f-9591-4982-94b7-41417ad2516c)
 
 ### Populated PCB: 
 
-![IMG_7256](https://github.com/Spelieye/superlooper/assets/36861919/5ddfab00-7a8d-4e93-8c3c-fda147196651)
+![IMG_7256](https://github.com/Spelieye/superlooper/assets/36861919/0c7a2982-c127-4e15-beac-e1ac6c1f7900)
 
 ### Wiring it up: 
 
-![IMG_7403](https://github.com/Spelieye/superlooper/assets/36861919/91c6aeb5-ffa9-44d6-af2f-69c7692887ac)
+![IMG_7403](https://github.com/Spelieye/superlooper/assets/36861919/674914ac-2013-4e40-8c90-3b42e8665469)
 *Wiring the switches*
 
-![IMG_7404](https://github.com/Spelieye/superlooper/assets/36861919/524ad3cd-bcf7-4a28-979b-e018121ad99e)
+![IMG_7404](https://github.com/Spelieye/superlooper/assets/36861919/65a4c9bf-5a02-442a-8044-7774005be9e5)
 *Everything wired up and needing to be pushed down for the PCB jacks to fit into the lower holes (top holes, depending on orientation)*
 
 For the LEDs, put them through the bottom of the PCB and bend the long leg a bit to keep them from falling out when the PCB is mounted into the enclosure. Green on top row and red on the bottom row. Once the PCB is mounted you can work the LEDs into their position, either into a hole or into an [LED holder](https://www.taydaelectronics.com/5mm-led-lampshade-protector-clear.html) that I used. It's a pain in the ass to get them all in so make sure the LEDs work before you solder them into place.
 
 Note: The silkscreen on the prototype PCB doesn't match the actual placement of the red and green LEDs. They are switched, this was an accident when I was creating the PCB but I actually like having the red loop leds closer to the switches. Happy accident. I've updated the silkscreen in the PCB files to show the correct placement of the LEDs. 
 
-![IMG_7405](https://github.com/Spelieye/superlooper/assets/36861919/555c350e-afc7-4dfe-9d23-c1ed49c76e8d)
+![IMG_7405](https://github.com/Spelieye/superlooper/assets/36861919/f394a476-8ef0-43cc-a6b2-af65d8d72af1)
 
-![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/63d0b6e5-b313-4154-aa68-05acf0ae9a9b)
+![IMG_7407](https://github.com/Spelieye/superlooper/assets/36861919/54bffe02-49e9-4279-8825-9da0302b45ce)
 
 ### Final Assembly:
 
-![IMG_7419](https://github.com/Spelieye/superlooper/assets/36861919/7dc00aa5-37fd-4301-874e-28c274d75c04)
+![IMG_7419](https://github.com/Spelieye/superlooper/assets/36861919/645fad5f-1e43-41ef-8fdf-69f4468e6afd)
 
-![IMG_7417](https://github.com/Spelieye/superlooper/assets/36861919/57925103-fb88-4e7c-9d1d-4d90625d3dda)
+![IMG_7417](https://github.com/Spelieye/superlooper/assets/36861919/0ff50cdf-7e6e-4f75-bba3-27e7be6dcc22)
 *Switches have been labled. 1 - 5 right to left*
 
 ## Programming
 
 The addition of ISP pins on the PCB makes flashing the chip easy, no need to remove the chip from the socket anytime you want to change something, amazing! I used a [Pocket AVR Programmer](https://www.sparkfun.com/products/9825), `avr-dude`, and a compile script which relies on `avr-gcc`. 
 
-![IMG_7415](https://github.com/Spelieye/superlooper/assets/36861919/44a3020e-bfe4-4595-b616-227e2e0e41e3)
+![IMG_7415](https://github.com/Spelieye/superlooper/assets/36861919/621d9997-f6f5-4bb7-ab10-bca4c11a2411)
 *AVR Programmer connected to the ISP port*
 
 To flash the chip do the following in a terminal: 
@@ -92,7 +92,7 @@ Here is a great [AVR Fuse Calculator](https://www.engbedded.com/fusecalc/) if yo
 
 5. Enjoy looping madness!
 
-![IMG_7414](https://github.com/Spelieye/superlooper/assets/36861919/f4ab234d-61b5-48ef-983e-fd0dcbe84cfd)
+![IMG_7414](https://github.com/Spelieye/superlooper/assets/36861919/59a3f8a6-223e-44ff-8f30-d4d07578a6f6)
 *Looper in the preset mode* 
 
 ## Features 
