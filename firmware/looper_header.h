@@ -69,7 +69,7 @@
 #define BANKCLED  2
 #define BANKDLED  3
 // Mode bits
-#define PRESETLED 4 // these have been switched for my reversal of the LED's on the PCB
+#define PRESETLED 4 
 #define LOOPLED   5
 // Mute bit
 #define MUTE      6

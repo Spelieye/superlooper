@@ -112,7 +112,7 @@ int main(void) {
           // engage bypass -- clear all loops
           if (bypass) engage_bypass(LOOP);
           // handle switch hold and save preset
-          if (sw_hold) save_preset();
+          if (sw_hold) save_preset(); tun
         }
         break;
 
@@ -128,15 +128,14 @@ int main(void) {
         while (mode == 2) {
 
           if (sw_press) {
-            // if any switch is held while in loop mode, nothing happens
-            while ( (SWITCH_IPA & switch_mask) != switch_mask ) {
-              // don't do anything until switches have been released
-            }
+            // preset loop selection will happen when the switch is pressed instead of when released
+            // results in better timing of effect switching when playing
             switch_logic();
             if (sw_press) get_preset();
           }
           // clear all loops 
           if (bypass) engage_bypass(PRESET); 
+          //if any switch is held while in loop mode, nothing happens
         }
         break;
     }
