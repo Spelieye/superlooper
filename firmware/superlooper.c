@@ -112,7 +112,7 @@ int main(void) {
           // engage bypass -- clear all loops
           if (bypass) engage_bypass(LOOP);
           // handle switch hold and save preset
-          if (sw_hold) save_preset(); tun
+          if (sw_hold) save_preset();
         }
         break;
 
