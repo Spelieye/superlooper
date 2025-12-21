@@ -82,7 +82,11 @@
 #define LED_SQ_DELAY        50 // ms
 
 // EEPROM addresses for settings and things
-#define	EEPROM_START			0		// start of our data in eeprom is here
+#define	EEPROM_START		0		// start of our data in eeprom is here
+#define MODE_REGISTER		38 
+#define BANK_REGISTER		39 
+#define LOOP_REGISTER		40
+#define PRESET_REGISTER		41
 
 // Arrays
 #define	LOOP		     0 	// bank index[0] for preset mode relay states

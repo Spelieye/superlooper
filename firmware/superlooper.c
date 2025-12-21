@@ -34,7 +34,7 @@ void switch_logic(void);
 uint8_t switch_mask = SWITCH_PCINTBITS; // 0x1F - 0b11111 only 5 switches
 volatile uint16_t milliseconds = 0; // uC millisecond counter used in delay_ms_(), and is reset throughout the application
 volatile uint8_t mode = 1; // 1 = LoopMode, 2 = PresetMode
-volatile uint8_t bank = 0; // start in 0 = BankA, 1 = BankB, 2 = BankC, 3 = BankD
+volatile uint8_t bank = 0; // 0 = BankA, 1 = BankB, 2 = BankC, 3 = BankD
 volatile uint8_t bypass = 0;
 
 // switch related globals:
@@ -65,10 +65,9 @@ int main(void) {
   // set to variable and read back what value is returned when nothing has been written to the register
   if ( eeprom_read_byte(pEE++) == 0xAA ) { // 0xAA is the "valid flag"
     load_presets(); 
-    mode = 2; // PresetMode
   } 
 
- // startup in a default mode with all relays off and in loop mode
+ // startup in a saved mode, if no presets are saved then default start up in loop mode so you can save loops to a preset
 
   // cool random led startup with preset LEDs
   // comment this out if you don't want this to happen everytime the pedal powers on. 
@@ -81,14 +80,14 @@ int main(void) {
   while(1) {
     // choose which mode the pedal is in
     switch (mode) {
-      // loop mode
+      // LOOP mode
       case 1:
         // turn on loop mode led and preset led off
         set1(BMMLED_PORT, LOOPLED);
         set0(BMMLED_PORT, PRESETLED);
         // clear any preset leds
         PRESETLED_PORT = 0; 
-        // add to whatever loops were left on if coming back from preset mode
+        // Turn on any loops that were left on 
         RELAY_PORT = mode_relay_settings[LOOP];
         // stay in loop mode
         while (mode == 1) {
@@ -116,13 +115,12 @@ int main(void) {
         }
         break;
 
-      // preset mode
+      // PRESET mode
       case 2:
         // turn on preset mode led and loop led off
         set0(BMMLED_PORT, LOOPLED);
         set1(BMMLED_PORT, PRESETLED);
         // get previous preset loop setting
-        // default: start in loop 1
         get_preset();
 
         while (mode == 2) {
@@ -131,7 +129,13 @@ int main(void) {
             // preset loop selection will happen when the switch is pressed instead of when released
             // results in better timing of effect switching when playing
             switch_logic();
-            if (sw_press) get_preset();
+            // check again b/c there are certain switch selections that don't change loops  
+            if (sw_press) {
+              // Save the relay state only when a new loop has been selected
+              // if the preset hasn't already been selected then save the last new preset selected 
+              eeprom_update_byte((uint8_t *)PRESET_REGISTER, mode_relay_settings[PRESET]);
+              get_preset();
+            }
           }
           // clear all loops 
           if (bypass) engage_bypass(PRESET); 
@@ -191,6 +195,8 @@ void toggle_loop_relays() {
     set0(BMMLED_PORT, MUTE);
     // handle this variable
     sw_press = 0;
+    // save current loop settings 
+    eeprom_update_byte((uint8_t *)LOOP_REGISTER, mode_relay_settings[LOOP]);
 
    return;
   }
@@ -203,11 +209,15 @@ void switch_logic() {
     case 0b11110: // bypass switch is pressed - sw 1
       // if you press bypass again you want to come out of bypass mode
       bypass = bypass ? 0 : 1;
+      // handle variable
       sw_press = 0;
       break;
 
     case 0b11000:  // mode selection has been pressed  - sw 1, 2, 3 
       (mode == 1) ? mode = 2 : (mode = 1);
+      // save the "last" known mode setting pedal was in so it can start there on the next power up
+      eeprom_update_byte((uint8_t *)MODE_REGISTER, mode);
+      // handle variable
       sw_press = 0;
       break;
 
@@ -218,6 +228,8 @@ void switch_logic() {
       // don't want to toggle any relays in loop mode
       if (mode == 1) sw_press = 0; 
       set_bank_leds();
+      // save last bank setting 
+      eeprom_update_byte((uint8_t *)BANK_REGISTER, bank);
       break;
 
     case 0b11100: // sw 1, 2
@@ -260,6 +272,7 @@ void switch_logic() {
       else mode_relay_settings[PRESET] = 7;
       break;
     }
+
   return;
 }
 
@@ -294,7 +307,7 @@ void save_preset() {
 
     case 0b11001: // sw 2, 3 -- preset 3
       mode_relay_settings[PRESET] = 2;
-      if (bank == 0) pEE = pEE + 3; // bank A
+      if (bank == 0) pEE = pEE + 3; // bank A 
       else if (bank == 1) pEE = pEE + 11; // bank B
       else if (bank == 2) pEE = pEE + 19; // bank C
       else if (bank == 3) pEE = pEE + 27; // bank D
@@ -345,7 +358,7 @@ void save_preset() {
   // save a preset with all 8 loops on, but is that ever going to happen? Like do you need 8 pedals on at once? 
   // well if you do, you can save such a preset once per bank wierdo
   if (mode_relay_settings[LOOP] == 255) {
-    if (bank == 0) pEE = (uint8_t *)34; // bank A
+    if (bank == 0) pEE = (uint8_t *)34; // bank A 
     else if (bank == 1) pEE = (uint8_t *)35; // bank B
     else if (bank == 2) pEE = (uint8_t *)36; // bank C
     else if (bank == 3) pEE = (uint8_t *)37; // bank D
@@ -392,13 +405,34 @@ void load_presets() {
   // check for all loop on saved presets, again like why but here we go
   for (i=0; i<PRESET_BANK_SIZE; i++) {
     // only load if an address contains data
-    reg_value = eeprom_read_byte(pEE);
+    reg_value = eeprom_read_byte(pEE++);
     if (reg_value != 255) {
       bank_presets[i][reg_value] = 255;
     }
-    pEE++; // last register will be 37
+   // last register will be 37
   }
-   
+
+  // register 38, saved mode
+  reg_value = eeprom_read_byte(pEE++);
+  if (reg_value != 255 ) {
+    mode = reg_value; 
+  }
+  // register 39, saved bank 
+  reg_value = eeprom_read_byte(pEE++);
+  if (reg_value != 255) {
+    bank = reg_value;
+  }
+  // register 40 - saved loops 
+  reg_value = eeprom_read_byte(pEE++);
+  if (reg_value != 255) {
+    mode_relay_settings[LOOP] = reg_value;
+  }
+  // register 41 - saved preset 
+  reg_value = eeprom_read_byte(pEE++);
+  if (reg_value != 255) {
+    mode_relay_settings[PRESET] = reg_value;
+  }
+ 
   return;
 }
 
@@ -415,9 +449,12 @@ void get_preset() {
   set0(BMMLED_PORT, MUTE);
 
   sw_press = 0; // handle variable
+  
   return;
 }
 
+
+// possible feature: hold bypass to save current state
 void engage_bypass(uint8_t index) {
 
   if (RELAY_PORT == 0) {
@@ -441,6 +478,9 @@ void engage_bypass(uint8_t index) {
     set0(BMMLED_PORT, MUTE);
     if (index == LOOP) mode_relay_settings[index] = 0;
   }
+
+  // save all relays in last known state in loop mode
+  if (index == LOOP) eeprom_update_byte((uint8_t *)LOOP_REGISTER, mode_relay_settings[index]);
 
   bypass = 0;
 
