@@ -104,6 +104,7 @@ Here are the changes that I made:
 2. To change bank press switch 3, 4, and 5
 3. If you want to save a preset with all the loops on, you can do that once per bank. You're welcome crazy person.
 4. There are two startup led sequences I programmed that happen upon powering on the pedal. You can comment those out in the code if you don't want them but I have the sequence led function on and it's pretty cool. [Here is a video](https://youtu.be/cNmv9_9q_pk)
+5. Will remember the last state of the pedal on the next power up. 
 
 That's about it, I hope you enjoy!
 
